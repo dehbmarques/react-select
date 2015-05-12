@@ -1,6 +1,7 @@
 var React = require('react');
 var Input = require('react-input-autosize');
 var classes = require('classnames');
+var _ = require('lodash');
 var Value = require('./Value');
 
 var requestId = 0;
@@ -34,6 +35,8 @@ var Select = React.createClass({
 		matchPos: React.PropTypes.string,          // (any|start) match the start or entire string when filtering
 		matchProp: React.PropTypes.string,         // (any|label|value) which option property to filter on
 		inputProps: React.PropTypes.object,        // custom attributes for the Input (in the Select-control) e.g: {'data-foo': 'bar'}
+		createable: React.PropTypes.bool,          // whether a new option can be created by giving a name
+		createText: React.PropTypes.string,        // text to be displayed after the new option
 
 		/*
 		* Allow user to make option label clickable. When this handler is defined we should
@@ -66,7 +69,8 @@ var Select = React.createClass({
 			matchPos: 'any',
 			matchProp: 'any',
 			inputProps: {},
-
+			createable: false,
+			createText: '(create new)',
 			onOptionLabelClick: undefined
 		};
 	},
@@ -511,7 +515,9 @@ var Select = React.createClass({
 					(this.props.matchProp !== 'value' && labelTest.toLowerCase().indexOf(filterValue.toLowerCase()) >= 0)
 				);
 			};
-			return (options || []).filter(filterOption, this);
+			var filteredOptions = (options || []).filter(filterOption, this);
+			filteredOptions = this.addCreateOption(filteredOptions, filterValue);
+			return filteredOptions;
 		}
 	},
 
@@ -629,6 +635,17 @@ var Select = React.createClass({
 		if (handler) {
 			handler(value, event);
 		}
+	},
+
+	addCreateOption: function(options, input) {
+		options = _.cloneDeep(options);
+		if (this.props.createable && input && !_.findWhere(options, {'label': input})) {
+			options.push({
+				'value': input,
+				'label': input + ' ' + this.props.createText
+			});
+		}
+		return options;
 	},
 
 	render: function() {
